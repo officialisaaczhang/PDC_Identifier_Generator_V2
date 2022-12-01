@@ -4,7 +4,7 @@
 #include "PDC_identifier.h"
 #include <windows.h>
 #include<tchar.h>
-#include <cmath>
+#include <comdef.h>
 #pragma comment(lib,"user32.lib")
 
 using namespace EuroScopePlugIn;
@@ -23,17 +23,33 @@ void __declspec (dllexport) EuroScopePlugInExit(void) {
 const int TAG_ITEM_PDC = 5000;
 const int TAG_FUNC_PDC_REQ = 5001;
 const int TAG_FUNC_PDC_RESET = 5002;
-string PDC_code;
+
+const int TAG_ITEM_FLAG = 5100;
+const int TAG_FUNC_FLAG_SET = 5101;
+
+const int TAG_ITEM_DEBUG = 5999;
+
+COLORREF pdc_Code = RGB(64, 255, 0);
+COLORREF pdc_Sent = RGB(255, 214, 51);
+COLORREF pdc_Read = pdc_Code;
+COLORREF pdc_Delete = RGB(255, 71, 26);
+
+const char* PDC_code;
 
 PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 	"PDC_identifier",
-	"2.0.0",
+	"2.1.0",
 	"Isaac Zhang",
 	"Free to be distributed as source code") {
 
 	RegisterTagItemType("PDC", TAG_ITEM_PDC);
 	RegisterTagItemFunction("Grant PDC", TAG_FUNC_PDC_REQ);
 	RegisterTagItemFunction("Reset", TAG_FUNC_PDC_RESET);
+
+	RegisterTagItemType("PDC Flag", TAG_ITEM_FLAG);
+	RegisterTagItemFunction("Set Status", TAG_FUNC_FLAG_SET);
+
+	RegisterTagItemType("Debug", TAG_ITEM_DEBUG);
 
 }
 
@@ -58,7 +74,44 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 		if (ItemCode == TAG_ITEM_PDC) {
 			const char* ID = (char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8);
 			strcpy_s(sItemString, 16, ID);
-	}
+			*pColorCode = TAG_COLOR_RGB_DEFINED;
+			COLORREF c_code = pdc_Code;
+			*pRGB = c_code;
+
+		}
+
+		if (ItemCode == TAG_ITEM_FLAG) {
+			const char* pdc_STS = FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7);
+
+			// Set PDC Status tracker shape and color according to status.
+			if (strncmp(pdc_STS, "ASN", 3) == 0) {
+				strcpy_s(sItemString, 16, "\x00A4");
+				*pColorCode = TAG_COLOR_RGB_DEFINED;
+				*pRGB = pdc_Sent;
+			}
+			else if (strncmp(pdc_STS, "RBC", 3) == 0) {
+				strcpy_s(sItemString, 16, "\x00A4");
+				*pColorCode = TAG_COLOR_RGB_DEFINED;
+				*pRGB = pdc_Read;
+			}
+			else if (strncmp(pdc_STS, "DEL", 3) == 0) {
+				strcpy_s(sItemString, 16, "\x00A4");
+				*pColorCode = TAG_COLOR_RGB_DEFINED;
+				*pRGB = pdc_Delete;
+				Sleep(3000);
+				FlightPlan.GetControllerAssignedData().SetFlightStripAnnotation(7, "");
+			}
+			else {
+				strcpy_s(sItemString, 16, "\x00AC");
+				*pColorCode = TAG_COLOR_DEFAULT;
+			}
+		}
+
+		if (ItemCode == TAG_ITEM_DEBUG) {
+			const char* text = (char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7);
+			strcpy_s(sItemString, 16, text);
+		
+		}
 }
 
 inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemString, POINT Pt, RECT Area)
@@ -99,14 +152,24 @@ inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemStri
 	// Confirm to delete existing code.
 	if (FunctionId == TAG_FUNC_PDC_RESET && delete_Window() == 1) {
 		fp.GetControllerAssignedData().SetFlightStripAnnotation(8, "");
+
+		// Set PDC Status tracker to "DEL" if identifier is deleted.
+		fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "DEL");
 	}
 
+	if (FunctionId == TAG_FUNC_FLAG_SET) {
+
+		//Set PDC Status tracker to "Read Back Correct" only if the previous status shows "ASN".
+		if (strncmp(fp.GetControllerAssignedData().GetFlightStripAnnotation(7), "ASN", 3) == 0) {
+			fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "RBC");
+		}
+	}
 }
 
 // Delete confirm window
 int PDC_identifier::delete_Window() {
 
-	const int result = MessageBox(NULL, L"This will delete the existing code. Please coordinate and confirm.", L"Existing PDC Identifier", MB_YESNOCANCEL);
+	const int result = MessageBox(NULL, "This will delete the existing code. Please coordinate and confirm.", "Existing PDC Identifier", MB_YESNOCANCEL);
 
 	int output;
 
@@ -129,7 +192,7 @@ int PDC_identifier::delete_Window() {
 // Overwriting warning window
 int PDC_identifier::overwrite_Window() {
 
-	const int result = MessageBox(NULL, L"This will overwrite the existing code. Please coordinate and confirm.", L"Existing PDC Identifier", MB_YESNOCANCEL);
+	const int result = MessageBox(NULL, "This will overwrite the existing code. Please coordinate and confirm.", "Existing PDC Identifier", MB_YESNOCANCEL);
 
 	int output;
 
@@ -160,6 +223,9 @@ inline void PDC_identifier::preview_Window(CFlightPlan fp, CFlightPlanData data,
 	{
 	case IDYES:
 		fp.GetControllerAssignedData().SetFlightStripAnnotation(8, code);
+
+		// Set Status tracker to "ASN" after assigning/re-assigning a PDC.
+		fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "ASN");
 		clipBoard_O(PDC_preview);
 		break;
 	case IDNO:
@@ -187,7 +253,7 @@ string PDC_identifier::PDC_construct(CFlightPlan fp, CFlightPlanData data, CFlig
 
 	// PDC message construction
 	// string message_old = "PDC - CALLSIGN: " + Callsign + " - DEP: " + DEP + " - ARR: " + ARR + " - FLIGHT PLANNED ROUTE - ALTITUDE: " + FALTT + " - SID: " + SID + " - DEP RWY: " + DRWY + " - SQUAWK: " + SQWK + " - DEP HDG & ALT AS PUBLISHED ON SID - IDENTIFIER: " + assignedIdent[fp.GetCallsign()] + " - READ BACK IDENTIFIER AND SID ON FREQUENCY";
-	string message = "PDC - " + Callsign + " " + SQWK + " " + DEP + " - " + TYPE + " - " + FALTT + " - " + ROUTE +
+	string message = "PDC - " + Callsign + " SQUAWK " + SQWK + " " + DEP + " - " + TYPE + " - " + FALTT + " - " + ROUTE +
 		" - USE SID " + SID + " - DEP RWY " + DRWY + " DESTINATION " + ARR + " CONTACT " + PDC_GIVER + " " + PDC_FREQ.substr(0,7) + " WITH IDENTIFIER " + PDC_IDENT + " - END OF MESSAGE";
 	return message;
 }
