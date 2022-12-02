@@ -38,7 +38,7 @@ Hit S on the Departrue list
 Add Item -> Tag Item type "PDC_identifer / PDC Flag" -> It is recommanded to use a single letter Header name and set Width to "1"
 Left/Right Button "PDC_identifier / Set Status"
 
-*For older version of ES: Click F on the Departure List and check the PDC box
+*For older version of ES: Click F on the Departure List and check the box named with Header name.
 
 To Use:
 
