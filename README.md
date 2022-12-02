@@ -52,6 +52,6 @@ To Use:
   
   WIP in future updates:
   
-  User Customization
-  Pilot initiated PDC
-  Custom list of PDC assigned.
+  User Customization;
+  Pilot initiated PDC;
+  Custom list of PDC assigned
