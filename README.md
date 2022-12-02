@@ -11,6 +11,7 @@ Add it to the allowed to draw on types "<<"
 Hit S on the Departrue list
 Add Item -> Tag Item type "PDC_identifer / PDC" -> Header name "PDC"
 Left Button "PDC_identifier / Grant PDC" -> Right button "PDC / Reset"
+
 *For older version of ES: Click F on the Departure List and check the PDC box
 
 To Use:
@@ -36,6 +37,7 @@ Set-up:
 Hit S on the Departrue list
 Add Item -> Tag Item type "PDC_identifer / PDC Flag" -> It is recommanded to use a single letter Header name and set Width to "1"
 Left/Right Button "PDC_identifier / Set Status"
+
 *For older version of ES: Click F on the Departure List and check the PDC box
 
 To Use:
