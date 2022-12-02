@@ -9,9 +9,9 @@ Other SET -> Plug-ins -> Load -> Load PDC_identifier.dll
 Choose Standard ES radar screen from the forbidden
 Add it to the allowed to draw on types "<<"
 Hit S on the Departrue list
-Add Item -> Tag Item type "PDC_identifer/PDC" -> Header name "PDC"
-Left Button "PDC/Grant PDC" -> Right button "PDC/Reset"
-Click F on the Departure List and check the PDC box
+Add Item -> Tag Item type "PDC_identifer / PDC" -> Header name "PDC"
+Left Button "PDC_identifier / Grant PDC" -> Right button "PDC / Reset"
+*For older version of ES: Click F on the Departure List and check the PDC box
 
 To Use:
 
@@ -29,4 +29,29 @@ To Use:
   - Delete:
         Simply right click to delete the Code.
         
+A Readback status tracker is also made to help controllers track the status of the PDC readback.
+
+Set-up:
+
+Hit S on the Departrue list
+Add Item -> Tag Item type "PDC_identifer / PDC Flag" -> It is recommanded to use a single letter Header name and set Width to "1"
+Left/Right Button "PDC_identifier / Set Status"
+*For older version of ES: Click F on the Departure List and check the PDC box
+
+To Use:
+
+  - The tracker will change colors automatically according to the status of the PDC assigned.
+
+        - Amber: A PDC assigned, awaiting pilot's readback.
+        - Green: Pilot's readback is correct.
+        - Red: A previously assigned PDC is deleted. This will stay to remind controller a previous assigned PDC is deleted.
+        
+   - The only time controllers need to click on the tracker to change status is when the readback from pilot is correct, thus, changing the color from Amber to Green.
+        
   Any feedback is welcomed.
+  
+  WIP in future updates:
+  
+  User Customization
+  Pilot initiated PDC
+  Custom list of PDC assigned.
