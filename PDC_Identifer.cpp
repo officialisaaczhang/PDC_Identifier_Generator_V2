@@ -35,10 +35,14 @@ COLORREF pdc_Read = pdc_Code;
 COLORREF pdc_Delete = RGB(255, 71, 26);
 
 const char* PDC_code;
+const char* my_Callsign;
+
+CFlightPlan received;
+
 
 PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 	"PDC_identifier",
-	"2.1.0",
+	"2.1.1",
 	"Isaac Zhang",
 	"Free to be distributed as source code") {
 
@@ -62,6 +66,12 @@ EuroScopePlugIn::CRadarScreen* PDC_identifier::OnRadarScreenCreated(const char* 
 	return nullptr;
 }
 
+void PDC_identifier::OnFlightPlanFlightStripPushed(CFlightPlan FlightPlan, const char* sSenderController, const char* sTargetController) {
+	if (strcmp(sTargetController, ControllerMyself().GetCallsign()) == 0) {
+		received = FlightPlan;
+	} 
+}
+
 void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 	EuroScopePlugIn::CRadarTarget RadarTarget,
 	int ItemCode,
@@ -71,20 +81,24 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 	COLORREF* pRGB,
 	double* pFontSize) {
 
+	if (strcmp((char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8), "") != 0 
+		&& strcmp((char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7), "") != 0) {
+		data_Sync(FlightPlan);
+	}
+
 		if (ItemCode == TAG_ITEM_PDC) {
 			const char* ID = (char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8);
 			strcpy_s(sItemString, 16, ID);
 			*pColorCode = TAG_COLOR_RGB_DEFINED;
 			COLORREF c_code = pdc_Code;
 			*pRGB = c_code;
-
 		}
 
 		if (ItemCode == TAG_ITEM_FLAG) {
 			const char* pdc_STS = FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7);
 
 			// Set PDC Status tracker shape and color according to status.
-			if (strncmp(pdc_STS, "ASN", 3) == 0) {
+			if (strcmp(pdc_STS, "ASN") == 0) {
 				strcpy_s(sItemString, 16, "\x00A4");
 				*pColorCode = TAG_COLOR_RGB_DEFINED;
 				*pRGB = pdc_Sent;
@@ -98,8 +112,6 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 				strcpy_s(sItemString, 16, "\x00A4");
 				*pColorCode = TAG_COLOR_RGB_DEFINED;
 				*pRGB = pdc_Delete;
-				Sleep(3000);
-				FlightPlan.GetControllerAssignedData().SetFlightStripAnnotation(7, "");
 			}
 			else {
 				strcpy_s(sItemString, 16, "\x00AC");
@@ -135,7 +147,7 @@ inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemStri
 		size_t Size = strlen(str);
 
 		// If no code has been previously assigned, assign a new code.
-		if (Size != 4) {
+		if (Size != 8) {
 
 			// Preview and copy to send
 			preview_Window(fp, data, cData, Atc, code);
@@ -150,11 +162,17 @@ inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemStri
 	}
 
 	// Confirm to delete existing code.
-	if (FunctionId == TAG_FUNC_PDC_RESET && delete_Window() == 1) {
-		fp.GetControllerAssignedData().SetFlightStripAnnotation(8, "");
+	if (FunctionId == TAG_FUNC_PDC_RESET && strcmp(cData.GetFlightStripAnnotation(8), "") != 0) {
+		if (delete_Window() == 1) {
+			// Reminder to revert back to voice procedures.
+			fp.GetControllerAssignedData().SetFlightStripAnnotation(8, "VOIC");
 
-		// Set PDC Status tracker to "DEL" if identifier is deleted.
-		fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "DEL");
+			// Set PDC Status tracker to "DEL" if identifier is deleted.
+			fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "DEL");
+
+			// Pushes updated flightstrip to everyone else supposedly.
+			data_Sync(fp);
+		}
 	}
 
 	if (FunctionId == TAG_FUNC_FLAG_SET) {
@@ -162,6 +180,9 @@ inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemStri
 		//Set PDC Status tracker to "Read Back Correct" only if the previous status shows "ASN".
 		if (strncmp(fp.GetControllerAssignedData().GetFlightStripAnnotation(7), "ASN", 3) == 0) {
 			fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "RBC");
+
+			// Pushes updated flightstrip to everyone else supposedly.
+			data_Sync(fp);
 		}
 	}
 }
@@ -226,7 +247,11 @@ inline void PDC_identifier::preview_Window(CFlightPlan fp, CFlightPlanData data,
 
 		// Set Status tracker to "ASN" after assigning/re-assigning a PDC.
 		fp.GetControllerAssignedData().SetFlightStripAnnotation(7, "ASN");
-		clipBoard_O(PDC_preview);
+		
+		// Pushes updated flightstrip to everyone else supposedly.
+		data_Sync(fp);
+
+		clipBoard_O(".msg " + string(fp.GetCallsign()) + " " + PDC_preview);
 		break;
 	case IDNO:
 		break;
@@ -293,16 +318,26 @@ void PDC_identifier::clipBoard_O(string message) {
 	CloseClipboard();
 }
 
+// For data synchronization
+int PDC_identifier::identifier_Sync(const char* ident) {
+	string compare = string(ident);
+	if (compare.substr(0, 4) == compare.substr(4, 7)) { return 0; }
+	else { return 1; };
+
+}
+
+// Syncs data when new PDC issued/readback status is updated.
+void PDC_identifier::data_Sync(CFlightPlan fp) {
+	const char* result = "";
+	CController current = ControllerSelectFirst();
+
+	while (current.IsValid() == TRUE) {
+		fp.PushFlightStrip(current.GetCallsign());
+		current = ControllerSelectNext(current);
+	}
+}
+
 inline void PDC_identifier::OnFlightPlanControllerAssignedDataUpdate(CFlightPlan FlightPlan, int DataType)
 {
-	PDC_code = FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8);
-	// if (assignedIdent.count(FlightPlan.GetCallsign())) {
-		// string newSratch = FlightPlan.GetControllerAssignedData().GetScratchPadString();
-		// if (newSratch.length() == 4) {
-			// assignedIdent[FlightPlan.GetCallsign()].swap(newSratch);
-		// }
-	// }
-	// else {
-		// assignedIdent.insert({ FlightPlan.GetCallsign(), FlightPlan.GetControllerAssignedData().GetScratchPadString() });
-	// }
+
 }

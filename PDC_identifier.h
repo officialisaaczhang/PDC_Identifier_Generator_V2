@@ -43,6 +43,14 @@ public:
 
 	virtual void clipBoard_O(string message);
 
+	void data_Sync(CFlightPlan fp);
+
+	int identifier_Sync(const char* ident);
+
+	void controller_Iterator(CFlightPlan fp);
+
 	inline virtual void OnFlightPlanControllerAssignedDataUpdate(CFlightPlan FlightPlan,
 		int DataType);
+
+	inline virtual void OnFlightPlanFlightStripPushed(CFlightPlan FlightPlan, const char* sSenderController, const char* sTargetController);
 };
