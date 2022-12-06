@@ -21,7 +21,7 @@ To Use:
         Left click on the column under PDC.
         A dialogue will pop up showing a preview of the PDC message.
         Once hit "Yes", the PDC clearance will be copied to the clipboard.
-        The message copied will contain the ".msg <Callsign>" part automatically.
+        The message copied will contain the ".msg Callsign" part automatically.
         Paste and send the PDC clearance through chat box.
         
   - Re-assignment:
@@ -51,9 +51,9 @@ To Use:
         
    - The only time controllers need to click on the tracker to change status is when the readback from pilot is correct, thus, changing the color from Amber to Green.
    
-   - Due to limitation of ES, controller who logs on to a new position (especially a lower position) needs to sync codes and status manually. This can be done by sending a private message to another controller. The message should be as follows:
+   **- Due to limitation of ES, controller who logs on to a new position (especially a lower position) needs to sync codes and status manually. This can be done by sending a private message to another controller. The message should be as follows:
   
-     "syncPDC"
+     **"syncPDC"
         
   Any feedback is welcomed.
   
