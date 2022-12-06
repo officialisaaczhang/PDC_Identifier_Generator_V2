@@ -28,7 +28,7 @@ const int TAG_FUNC_PDC_RESET = 5002;
 const int TAG_ITEM_FLAG = 5100;
 const int TAG_FUNC_FLAG_SET = 5101;
 
-const int TAG_ITEM_DEBUG = 5999;
+// const int TAG_ITEM_DEBUG = 5999;
 
 COLORREF pdc_Code = RGB(64, 255, 0);
 COLORREF pdc_Sent = RGB(255, 214, 51);
@@ -53,8 +53,11 @@ PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 	RegisterTagItemType("PDC Flag", TAG_ITEM_FLAG);
 	RegisterTagItemFunction("Set Status", TAG_FUNC_FLAG_SET);
 
-	RegisterTagItemType("Debug", TAG_ITEM_DEBUG);
+	// RegisterTagItemType("Debug", TAG_ITEM_DEBUG);
 
+	DisplayUserMessage("PDC_identifier", "PDC_identifier", "v2.1.2 initialized.", false, true, true, true, false);
+	DisplayUserMessage("PDC_identifier", "PDC_identifier", "Don't forget to sync Code and Status if you are in a lower position before you assign any new PDC.", false, true, true, true, false);
+	DisplayUserMessage("PDC_identifier", "PDC_identifier", "Simply type 'syncPDC' as a private message to another controller.", false, true, true, true, false);
 }
 
 PDC_identifier::~PDC_identifier()
@@ -124,11 +127,11 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 			}
 		}
 
-		if (ItemCode == TAG_ITEM_DEBUG) {
+		/* if (ItemCode == TAG_ITEM_DEBUG) {
 			const char* text = (char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7);
 			strcpy_s(sItemString, 16, text);
 		
-		}
+		} */
 }
 
 inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemString, POINT Pt, RECT Area)
@@ -152,7 +155,7 @@ inline void PDC_identifier::OnFunctionCall(int FunctionId, const char* sItemStri
 		size_t Size = strlen(str);
 
 		// If no code has been previously assigned, assign a new code.
-		if (Size != 8) {
+		if (Size != 4) {
 
 			// Preview and copy to send
 			preview_Window(fp, data, cData, Atc, code);
