@@ -21,7 +21,8 @@ To Use:
         Left click on the column under PDC.
         A dialogue will pop up showing a preview of the PDC message.
         Once hit "Yes", the PDC clearance will be copied to the clipboard.
-        Send the PDC clearance through private chat.
+        The message copied will contain the ".msg <Callsign>" part automatically.
+        Paste and send the PDC clearance through chat box.
         
   - Re-assignment:
         When there is an existing identifier assigned, a pop up will confirm with you about reassignment of the identifier.
