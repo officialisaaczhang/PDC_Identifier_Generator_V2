@@ -17,7 +17,7 @@ public:
 	PDC_identifier();
 	virtual ~PDC_identifier();
 	EuroScopePlugIn::CRadarScreen* OnRadarScreenCreated(const char* sDisplayName, bool NeedRadarContent, bool GeoReferenced, bool CanBeSaved, bool CanBeCreated);
-	
+
 	virtual void OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 		EuroScopePlugIn::CRadarTarget RadarTarget,
 		int ItemCode,
@@ -45,12 +45,10 @@ public:
 
 	void data_Sync(CFlightPlan fp);
 
-	int identifier_Sync(const char* ident);
+	// void controller_Sync(CFlightPlan fltpln);
 
-	void controller_Iterator(CFlightPlan fp);
+	// inline virtual void OnControllerDisconnect(CController Controller);
 
-	inline virtual void OnFlightPlanControllerAssignedDataUpdate(CFlightPlan FlightPlan,
-		int DataType);
+	inline virtual void OnCompilePrivateChat(const char* sSenderCallsign, const char* sReceiverCallsign, const char* sChatMessage);
 
-	inline virtual void OnFlightPlanFlightStripPushed(CFlightPlan FlightPlan, const char* sSenderController, const char* sTargetController);
 };

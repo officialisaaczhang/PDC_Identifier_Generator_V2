@@ -5,6 +5,7 @@
 #include <windows.h>
 #include<tchar.h>
 #include <comdef.h>
+// #include <algorithm>
 #pragma comment(lib,"user32.lib")
 
 using namespace EuroScopePlugIn;
@@ -34,15 +35,14 @@ COLORREF pdc_Sent = RGB(255, 214, 51);
 COLORREF pdc_Read = pdc_Code;
 COLORREF pdc_Delete = RGB(255, 71, 26);
 
-const char* PDC_code;
-const char* my_Callsign;
+const char* sync_Com;
+const char* target_Callsign;
 
-CFlightPlan received;
-
+// vector<const char*> online_ctr = {};
 
 PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 	"PDC_identifier",
-	"2.1.1",
+	"2.1.2",
 	"Isaac Zhang",
 	"Free to be distributed as source code") {
 
@@ -66,12 +66,6 @@ EuroScopePlugIn::CRadarScreen* PDC_identifier::OnRadarScreenCreated(const char* 
 	return nullptr;
 }
 
-void PDC_identifier::OnFlightPlanFlightStripPushed(CFlightPlan FlightPlan, const char* sSenderController, const char* sTargetController) {
-	if (strcmp(sTargetController, ControllerMyself().GetCallsign()) == 0) {
-		received = FlightPlan;
-	} 
-}
-
 void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 	EuroScopePlugIn::CRadarTarget RadarTarget,
 	int ItemCode,
@@ -81,9 +75,20 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 	COLORREF* pRGB,
 	double* pFontSize) {
 
-	if (strcmp((char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8), "") != 0 
+	if (strcmp((char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(8), "") != 0
 		&& strcmp((char*)FlightPlan.GetControllerAssignedData().GetFlightStripAnnotation(7), "") != 0) {
-		data_Sync(FlightPlan);
+
+		// controller_Sync(FlightPlan);
+
+		// Syncs existing PDC and Status to the controller who requested the syncing.
+		if (sync_Com == "syncPDC") {
+			CFlightPlan currentfp = FlightPlanSelectFirst();
+
+			while (currentfp.IsValid() == TRUE) {
+				currentfp.PushFlightStrip(target_Callsign);;
+				currentfp = FlightPlanSelectNext(currentfp);
+			}
+		}
 	}
 
 		if (ItemCode == TAG_ITEM_PDC) {
@@ -318,14 +323,6 @@ void PDC_identifier::clipBoard_O(string message) {
 	CloseClipboard();
 }
 
-// For data synchronization
-int PDC_identifier::identifier_Sync(const char* ident) {
-	string compare = string(ident);
-	if (compare.substr(0, 4) == compare.substr(4, 7)) { return 0; }
-	else { return 1; };
-
-}
-
 // Syncs data when new PDC issued/readback status is updated.
 void PDC_identifier::data_Sync(CFlightPlan fp) {
 	const char* result = "";
@@ -336,8 +333,38 @@ void PDC_identifier::data_Sync(CFlightPlan fp) {
 		current = ControllerSelectNext(current);
 	}
 }
+/*
+void PDC_identifier::controller_Sync(CFlightPlan fltpln) {
 
-inline void PDC_identifier::OnFlightPlanControllerAssignedDataUpdate(CFlightPlan FlightPlan, int DataType)
-{
+	CController current = ControllerSelectFirst();
 
+	while (current.IsValid() == TRUE) {
+		if (current.IsOngoingAble() == TRUE) {
+
+			if ((find(online_ctr.begin(), online_ctr.end(), current.GetCallsign()) != online_ctr.end())) {
+
+			}
+			else {
+				// DisplayUserMessage("PDC_identifier","PDC", current.GetCallsign(), false, true, true, false, false);
+				online_ctr.push_back(current.GetCallsign());
+				fltpln.PushFlightStrip(current.GetCallsign());
+				// DisplayUserMessage("PDC_identifier", "PDC", "Flightstrip pushed", false, true, true, false, false);
+			}
+		}
+		current = ControllerSelectNext(current);
+	}
+} */
+
+/* inline void PDC_identifier::OnControllerDisconnect(CController Controller) {
+	if ((find(online_ctr.begin(), online_ctr.end(), Controller.GetCallsign()) != online_ctr.end())) {
+		// remove(online_ctr.begin(), online_ctr.end(), Controller.GetCallsign());
+	}
+} */
+
+// Manual syncing of existing PDC and Status. Done when a new controller logs on.
+inline void PDC_identifier::OnCompilePrivateChat(const char* sSenderCallsign, const char* sReceiverCallsign, const char* sChatMessage) {
+	if (sChatMessage = "syncPDC") {
+		sync_Com = sChatMessage;
+		target_Callsign = sSenderCallsign;
+	}
 }
