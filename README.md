@@ -49,6 +49,10 @@ To Use:
         - Red: A previously assigned PDC is deleted. This will stay to remind controller a previous assigned PDC is deleted.
         
    - The only time controllers need to click on the tracker to change status is when the readback from pilot is correct, thus, changing the color from Amber to Green.
+   
+    ***Due to limitation of ES, controller who logs on to a new position (especially a lower position) needs to sync codes and status manually. This can be done by sending a private message to another controller. The message should be as follows:
+  
+  - syncPDC
         
   Any feedback is welcomed.
   
