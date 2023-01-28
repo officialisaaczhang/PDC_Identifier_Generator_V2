@@ -42,7 +42,7 @@ const char* target_Callsign;
 
 PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 	"PDC_identifier",
-	"2.1.2",
+	"2.1.2.hf1",
 	"Isaac Zhang",
 	"Free to be distributed as source code") {
 
@@ -55,7 +55,7 @@ PDC_identifier::PDC_identifier() : CPlugIn(EuroScopePlugIn::COMPATIBILITY_CODE,
 
 	// RegisterTagItemType("Debug", TAG_ITEM_DEBUG);
 
-	DisplayUserMessage("PDC_identifier", "PDC_identifier", "v2.1.2 initialized.", false, true, true, true, false);
+	DisplayUserMessage("PDC_identifier", "PDC_identifier", "v2.1.2.hf1 initialized.", false, true, true, true, false);
 	DisplayUserMessage("PDC_identifier", "PDC_identifier", "Don't forget to sync Code and Status if you are in a lower position before you assign any new PDC.", false, true, true, true, false);
 	DisplayUserMessage("PDC_identifier", "PDC_identifier", "Simply type 'syncPDC' as a private message to another controller.", false, true, true, true, false);
 }
@@ -85,6 +85,7 @@ void PDC_identifier::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
 
 		// Syncs existing PDC and Status to the controller who requested the syncing.
 		if (sync_Com == "syncPDC") {
+			DisplayUserMessage("PDC_identifier", "PDC", "Flightstrip pushed", false, true, true, false, false);
 			CFlightPlan currentfp = FlightPlanSelectFirst();
 
 			while (currentfp.IsValid() == TRUE) {
@@ -332,7 +333,10 @@ void PDC_identifier::data_Sync(CFlightPlan fp) {
 	CController current = ControllerSelectFirst();
 
 	while (current.IsValid() == TRUE) {
-		fp.PushFlightStrip(current.GetCallsign());
+		if (current.IsOngoingAble()) {
+			fp.PushFlightStrip(current.GetCallsign());
+			DisplayUserMessage("PDC_identifier", "PDC", "Flightstrip broadcasted", false, true, true, false, false);
+		}
 		current = ControllerSelectNext(current);
 	}
 }
