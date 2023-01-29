@@ -62,3 +62,20 @@ To Use:
   User Customization;
   Pilot initiated PDC;
   Custom list of PDC assigned
+
+# Change Log
+
+- V2.1.2
+  First network ready release.
+
+- V2.1.2.hf1 (latest release)
+  Fixed the issue where ES sends flight strips to non-ES client.
+
+- v2.1.3 (WIP)
+  PDC now cannot be assigned without SID and Runway assigned in Departure List.
+  PDC will now expire after x minutes with identifier and readback status deleted after (x + 15) minutes.
+  Add new readback status ("EXP") for expired PDC.
+  
+- V2.2.X (Future releases)
+  Pilots can request by sending private message to the controller.
+  Custom PDC window for assigning, reassigning and reverting PDC.
